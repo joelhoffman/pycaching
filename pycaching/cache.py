@@ -765,7 +765,13 @@ class Cache(object):
         pm_only_warning = root.find("p", "Warning NoBottomSpacing")
         self.pm_only = pm_only_warning and ("Premium Member Only" in pm_only_warning.text) or False
 
-        attributes_widget, inventory_widget, *_ = root.find_all("div")
+        inventory_widget = None
+        attributes_widget = None
+        for header in root.find_all("h3","WidgetHeader"):
+            if header.text.strip() == "Attributes":
+                attributes_widget = header.find_next_sibling("div")
+            elif header.text.strip() == "Inventory":
+                inventory_widget = header.find_next_sibling("div")
 
         hidden = cache_details.find("div", "minorCacheDetails").find_all("div")[1].text
         self.hidden = parse_date(hidden.split(":")[-1])
@@ -781,7 +787,7 @@ class Cache(object):
         else:
             self._found_status = None
 
-        attributes_raw = attributes_widget.find_all("img")
+        attributes_raw = attributes_widget.find_all("img") if attributes_widget else []
         attributes_raw = [_.get("src").split("/")[-1].rsplit("-", 1) for _ in attributes_raw]
 
         self.attributes = {
@@ -813,7 +819,7 @@ class Cache(object):
             self.original_location = None
 
         # if there are some trackables
-        if len(inventory_widget.find_all("a")) >= 3:
+        if inventory_widget and len(inventory_widget.find_all("a")) >= 3:
             trackable_page_url = inventory_widget.find(id="ctl00_ContentBody_uxTravelBugList_uxViewAllTrackableItems")
             self._trackable_page_url = trackable_page_url.get("href")[3:]  # has "../" on start
         else:
