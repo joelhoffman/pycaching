@@ -541,7 +541,7 @@ class Cache(object):
     @attributes.setter
     def attributes(self, attributes):
         if not isinstance(attributes, dict):
-            raise errors.ValueError("Attribues is not dict.")
+            raise errors.ValueError("Attributes is not dict.")
 
         self._attributes = {}
         for name, allowed in attributes.items():
@@ -765,13 +765,16 @@ class Cache(object):
         pm_only_warning = root.find("p", "Warning NoBottomSpacing")
         self.pm_only = pm_only_warning and ("Premium Member Only" in pm_only_warning.text) or False
 
-        inventory_widget = None
         attributes_widget = None
-        for header in root.find_all("h3","WidgetHeader"):
-            if header.text.strip() == "Attributes":
-                attributes_widget = header.find_next_sibling("div")
-            elif header.text.strip() == "Inventory":
-                inventory_widget = header.find_next_sibling("div")
+        for container in root.find_all("div", "WidgetBody"):
+            if any(
+                "src" in img.attrs and img.attrs["src"].startswith("/images/attributes")
+                for img in container.find_all("img")
+            ):
+                attributes_widget = container
+                break
+
+        inventory_widget = root.find(id="trackableInventory")
 
         hidden = cache_details.find("div", "minorCacheDetails").find_all("div")[1].text
         self.hidden = parse_date(hidden.split(":")[-1])
